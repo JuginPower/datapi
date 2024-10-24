@@ -1,20 +1,32 @@
-from flask import Flask, send_file
+from flask import Flask, jsonify, request
 import os
+import json
 
 app = Flask(__name__)
 
-@app.route('/scrapy-data')
+@app.route('/stock', methods=['GET', 'POST', 'DELETE'])
 def download_data():
-    # Pfad zur Datei, die gesendet werden soll
-    path = "/home/eugen/projects/webcrawler/data.jsonl"
 
-    # Sende die Datei
-    response = send_file(path, as_attachment=True)
+    response = None
+    path = "/home/eugen/Schreibtisch/projects/datapi/data.jsonl"
+
+    try:
+        if request.method in ['GET', 'POST']:
+            
+            with open(path, 'r') as f:
+                data = [json.loads(line) for line in f]
+
+            response = jsonify(data), 200
+
+        elif request.method == 'DELETE':
+            os.remove(path)
+            response = {"response": "Succeed"}, 200
+
+    except FileNotFoundError:
+        response = {"response": "No Data"}, 404
     
-    # Lösche die Datei nach dem Senden
-    os.remove(path)
-
     return response
+        
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
