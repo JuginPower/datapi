@@ -8,13 +8,14 @@ app = Flask(__name__)
 def download_data():
 
     response = None
-    path = "/home/eugen/Schreibtisch/projects/datapi/data.jsonl"
+    path = "/home/eugen/Schreibtisch/projects/datapi/data.jsonl" # Verschleiern!
 
     try:
         if request.method in ['GET', 'POST']:
-            
-            with open(path, 'r') as f:
-                data = [json.loads(line) for line in f]
+            data = []
+            with open("/home/eugen/Schreibtisch/projects/datapi/data.jsonl", "r") as f:
+                for line in f:
+                    data.append(json.loads(line))
 
             response = jsonify(data), 200
 

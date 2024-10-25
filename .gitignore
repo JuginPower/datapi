@@ -4,3 +4,5 @@ docs/
 *.txt
 *.log
 *.jsonl
+.idea/
+*.xml
