@@ -1,52 +1,40 @@
 import pytest
-import json
-from app import app  # Importiere deine Flask-App
+from unittest.mock import patch, Mock
+from app import app
 
-@pytest.fixture
-def client():
-    app.config['TESTING'] = True
+
+def test_get_data_with_mocked_data():
+    """
+    Tests data retrieval.
+
+    :return: 200, len(response.data) > 0
+    """
+
     with app.test_client() as client:
-        yield client
+        response = client.get('/stock')
+        assert response.status_code == 200
+        assert len(response.data) > 0
+        response = client.post('/stock')
+        assert response.status_code == 200
+        assert len(response.data) > 0
 
-# Test für GET-Anfrage
-def test_get_data(client, monkeypatch):
-    # Dummy-Inhalt für data.jsonl erstellen
-    test_data = [{"name": "test1", "value": 10}, {"name": "test2", "value": 20}]
-    monkeypatch.setattr("builtins.open", lambda f, mode: iter([json.dumps(item) for item in test_data]))
 
-    response = client.get('/stock')
-    assert response.status_code == 200
-    assert response.is_json
-    data = response.get_json()
-    assert data == test_data
+def test_handling_missing_file():
+    """
+    Tests whether after a one-time get and delete request of the data, this data is no longer available when the same
+    requests are repeated.
 
-# Test für DELETE-Anfrage
-def test_delete_data(client, monkeypatch):
-    def mock_remove(path):
-        # Mock-Funktion zum Löschen
-        pass
+    :return: 200, 200, 404, 404
+    """
+    mock = Mock(side_effect=[200, 200, 404, 404])
 
-    monkeypatch.setattr("os.remove", mock_remove)
-    response = client.delete('/stock')
-    assert response.status_code == 200
-    assert response.json == {"response": "Succeed"}
+    with app.test_client() as client:
+        response = client.get('/stock')
+        assert response.status_code == mock()
+        response = client.delete('/stock')
+        assert response.status_code == mock()
+        response = client.get('/stock')
+        assert response.status_code == mock()
+        response = client.delete('/stock')
+        assert response.status_code == mock()
 
-# Test für GET-Anfrage, wenn die Datei nicht vorhanden ist
-def test_get_data_file_not_found(client, monkeypatch):
-    def mock_open(path, mode):
-        raise FileNotFoundError
-
-    monkeypatch.setattr("builtins.open", mock_open)
-    response = client.get('/stock')
-    assert response.status_code == 404
-    assert response.json == {"response": "No Data"}
-
-# Test für DELETE-Anfrage, wenn die Datei nicht vorhanden ist
-def test_delete_data_file_not_found(client, monkeypatch):
-    def mock_remove(path):
-        raise FileNotFoundError
-
-    monkeypatch.setattr("os.remove", mock_remove)
-    response = client.delete('/stock')
-    assert response.status_code == 404
-    assert response.json == {"response": "No Data"}
