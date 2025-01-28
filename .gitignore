@@ -7,3 +7,4 @@ docs/
 .idea/
 *.xml
 experiment.py
+*.json
